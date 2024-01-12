@@ -24,7 +24,7 @@ class HopfieldNetwork(object):
         
         # Hebb rule
         for i in tqdm(range(num_data)):
-            t = train_data[i] - rho
+            t = np.float32(train_data[i] - rho)
             W += np.outer(t, t)
         
         print("Hebb rule step done")
