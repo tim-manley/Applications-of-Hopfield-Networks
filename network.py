@@ -21,6 +21,7 @@ class HopfieldNetwork(object):
         rho = np.sum([np.sum(t) for t in train_data]) / (num_data*self.num_neuron)
 
         print("Weights initialized")
+        print(W.shape)
         
         # Hebb rule
         for i in tqdm(range(num_data)):
