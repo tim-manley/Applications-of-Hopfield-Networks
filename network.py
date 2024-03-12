@@ -113,3 +113,73 @@ class HopfieldNetwork(object):
         plt.tight_layout()
         plt.savefig("weights.png")
         plt.show()
+
+class ContinuousHopfieldNetwork(object):
+    '''
+    Simple implementation of a continuous Hopfield network (described by Ramsauer et al.)
+
+    Data images first need to be flattened for training and prediction.
+    '''
+    def train(self, train_data: np.ndarray):
+        self._stored_patterns = train_data.T
+
+    def energy(self, state):
+        pass
+    
+    def predict(self, test_data, beta=1):
+        predictions = []
+        num_data = len(test_data)
+        for i in tqdm(range(num_data)):
+             temp = self._stored_patterns.T @ test_data[i].T
+             temp *= beta
+             #print("After matmu: ", temp)
+             temp = np.exp(temp)/sum(np.exp(temp))
+             #print("After softmax: ", temp)
+             predictions.append(self._stored_patterns @ temp)
+        return np.array(predictions)
+
+
+
+'''
+
+Store [[1, 2, 3, 4],
+       [2, 3, 4, 5]]
+
+       ->
+
+       [[1, 2],
+        [2, 3],
+        [3, 4],
+        [4, 5]]
+
+Predict on [[3, 4, 5, 6]] -> [[3],
+                              [4],
+                              [5],
+                              [6]]
+
+beta * (X.T @ S) = [[3 + 8 + 15 + 24],
+                   [6 + 12 + 20 + 30]]
+                 = [[50],
+                    [68]]
+
+softmax(beta * (X.T @ S)) = [[exp(50)/(exp(50) + exp(68))],
+                             [exp(68)/(exp(50) + exp(68))]]
+                          = [[1.523e-8],
+                             [0.999]]
+
+X @ softmax(beta * (X.T @ S)) = [[~2],
+                                 [~3],
+                                 [~4],
+                                 [~5]]
+
+'''
+if __name__ == "__main__":
+    chn = ContinuousHopfieldNetwork()
+    train_data = np.array([[[1, 2], [3, 4]],
+                           [[2, 3], [4, 5]]])
+    
+    test_data = np.array([[[3, 4], [5, 6]]])
+
+    chn.train(train_data)
+    prediction = chn.predict(test_data)
+    print("Prediction: ", prediction)
