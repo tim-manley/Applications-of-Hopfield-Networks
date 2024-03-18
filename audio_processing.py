@@ -91,6 +91,11 @@ def compute_mel_spectrogram(wave_file, num_mel_filters=40):
     # Only take positive frequencies
     freq_axis = freq_axis[:len(freq_axis)//2]
     stft = stft[:len(freq_axis)]
+
+    # Pre-normalize
+    print(stft.shape)
+    stft = normalize(stft.reshape(-1, 1), axis=0)
+    print(stft)
     
     # Convert frequencies to Mel scale
     mel_freqs = mel_scale(freq_axis, num_mel_filters, sample_rate)

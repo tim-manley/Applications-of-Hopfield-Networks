@@ -126,17 +126,18 @@ class ContinuousHopfieldNetwork(object):
     def energy(self, state):
         pass
     
-    def predict(self, test_data, beta=1):
-        predictions = []
+    def predict(self, test_data, beta=1, num_iter=1, hide_output=False):
+        predictions = np.copy(test_data)
         num_data = len(test_data)
-        for i in tqdm(range(num_data)):
-             temp = self._stored_patterns.T @ test_data[i].T
-             temp *= beta
-             #print("After matmu: ", temp)
-             temp = np.exp(temp)/sum(np.exp(temp))
-             #print("After softmax: ", temp)
-             predictions.append(self._stored_patterns @ temp)
-        return np.array(predictions)
+        for i in tqdm(range(num_data), disable=hide_output):
+            for j in range(num_iter):
+                temp = self._stored_patterns.T @ predictions[i].T
+                temp *= beta
+                #print("After matmu: ", temp)
+                temp = np.exp(temp)/sum(np.exp(temp))
+                #print("After softmax: ", temp)
+                predictions[i] = self._stored_patterns @ temp
+        return predictions
 
 
 
