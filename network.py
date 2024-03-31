@@ -9,6 +9,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 from tqdm import tqdm
+from sklearn.preprocessing import normalize
+from torch.nn.functional import softmax
 
 class HopfieldNetwork(object):      
     def train_weights(self, train_data):
@@ -120,24 +122,33 @@ class ContinuousHopfieldNetwork(object):
 
     Data images first need to be flattened for training and prediction.
     '''
+    def __init__(self, num_classes):
+        self.num_classes = num_classes
+
+
     def train(self, train_data: np.ndarray):
+        '''
+        For classification, train_data is (z_i, t_i) where t_i is the classification vector
+        '''
         self._stored_patterns = train_data.T
 
     def energy(self, state):
         pass
     
     def predict(self, test_data, beta=1, num_iter=1, hide_output=False):
-        predictions = np.copy(test_data)
-        num_data = len(test_data)
-        for i in tqdm(range(num_data), disable=hide_output):
+        state = np.copy(test_data)
+        labels = np.zeros((len(test_data), self.num_classes))
+        state = np.concatenate((state, labels), axis=1)
+        for i in tqdm(range(len(test_data)), disable=hide_output):
             for j in range(num_iter):
-                temp = self._stored_patterns.T @ predictions[i].T
-                temp *= beta
-                #print("After matmu: ", temp)
-                temp = np.exp(temp)/sum(np.exp(temp))
-                #print("After softmax: ", temp)
-                predictions[i] = self._stored_patterns @ temp
-        return predictions
+                matmu = self._stored_patterns.T[:, :-self.num_classes] @ state[i][:-self.num_classes].T
+                matmu *= beta
+
+                soft = np.exp(matmu)/np.sum(np.exp(matmu))
+
+                state[i] = self._stored_patterns @ soft
+                labels[i] = state[i][-self.num_classes:]
+        return state, labels
 
 
 
@@ -175,12 +186,27 @@ X @ softmax(beta * (X.T @ S)) = [[~2],
 
 '''
 if __name__ == "__main__":
-    chn = ContinuousHopfieldNetwork()
-    train_data = np.array([[[1, 2], [3, 4]],
-                           [[2, 3], [4, 5]]])
+    chn = ContinuousHopfieldNetwork(num_classes=3)
+    train_signal = np.array([[1,2,3,4],
+                             [7,1,3,1],
+                             [10,9,8,7]])
     
-    test_data = np.array([[[3, 4], [5, 6]]])
+    train_signal = normalize(train_signal, axis=1)
+
+    labels = np.array([[0, 1, 0],
+                       [1, 0, 0],
+                       [0, 0, 1]])
+    
+    train_data = np.concatenate((train_signal, labels), axis=1)
+    #train_data = train_signal
+    
+    test_data = normalize(np.array([[1, 2, 3, 4]]), axis=1)
 
     chn.train(train_data)
-    prediction = chn.predict(test_data)
+    prediction = chn.predict(test_data, beta=400, num_iter=1)
     print("Prediction: ", prediction)
+
+
+'''
+[1 * 0 + 2 * 1, 2 * 0 + 3 * 1
+'''
